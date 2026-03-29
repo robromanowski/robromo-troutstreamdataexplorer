@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Southern Appalachian Trout Stream Data Explorer</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <a href="index.html" class="back-link">← All Regions</a>
+            <h1><span class="header-region">Southern Appalachian</span><span class="header-tagline">Trout Stream Data Explorer</span></h1>
+            <p class="subtitle">Electrofishing survey data from Great Smoky Mountains, Cherokee NF, Pisgah NF, Nantahala NF &amp; Eastern TN/Western NC</p>
+        </div>
+    </header>
+
+    <main>
+        <section class="stats-bar">
+            <div class="stat">
+                <span class="stat-value" id="totalStreams">--</span>
+                <span class="stat-label">Streams</span>
+            </div>
+            <div class="stat">
+                <span class="stat-value" id="totalSamples">--</span>
+                <span class="stat-label">Samples</span>
+            </div>
+            <div class="stat">
+                <span class="stat-value" id="dateRange">--</span>
+                <span class="stat-label">Date Range</span>
+            </div>
+            <div class="stat">
+                <span class="stat-value" id="dataSources">--</span>
+                <span class="stat-label">Data Sources</span>
+            </div>
+        </section>
+
+        <section class="controls">
+            <div class="filter-group">
+                <label for="regionFilter">🌎 Region</label>
+                <select id="regionFilter">
+                    <option value="all">All Regions</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="sourceFilter">ℹ️ Data Source</label>
+                <select id="sourceFilter">
+                    <option value="all">All Sources</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="speciesFilter">🐟 Species</label>
+                <select id="speciesFilter">
+                    <option value="all">All Species</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="minSamples">#️⃣ Min Samples</label>
+                <input type="number" id="minSamples" value="1" min="1" max="100">
+            </div>
+            <div class="filter-group">
+                <label for="searchInput">🔍 Search Stream</label>
+                <input type="text" id="searchInput" placeholder="Stream name...">
+            </div>
+            <div class="filter-group">
+                <label for="metricSelect">📏 Metric</label>
+                <select id="metricSelect">
+                    <option value="area">fish/100m²</option>
+                    <option value="linear_km">fish/km</option>
+                    <option value="linear_mi">fish/mi</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="estimatedFilter">✨ Estimated</label>
+                <select id="estimatedFilter">
+                    <option value="show">Show all</option>
+                    <option value="blank">Show, no density</option>
+                    <option value="hide">Hide</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <button id="resetFilters" class="btn-reset">Reset Filters</button>
+            </div>
+        </section>
+
+        <section class="content-grid">
+            <div class="map-container">
+                <div id="map"></div>
+            </div>
+            <div class="table-container">
+                <div class="table-header">
+                    <h2>Stream Rankings <span id="filteredCount"></span></h2>
+                    <button id="exportCsv" class="btn-export">Export CSV</button>
+                </div>
+                <div class="table-wrapper">
+                    <table id="dataTable">
+                        <thead>
+                            <tr>
+                                <th data-sort="rank">#</th>
+                                <th data-sort="stream_name">Stream Name</th>
+                                <th title="Mapped on map">📍</th>
+                                <th data-sort="species">Sp.</th>
+                                <th data-sort="state">State</th>
+                                <th data-sort="region">Region</th>
+                                <th id="th-avg-density" data-sort="avg_density_per_100m2" class="sortable active desc">Avg Density<br><small>/100m&sup2;</small></th>
+                                <th id="th-best-density" data-sort="best_site_density">Best Site<br><small>/100m&sup2;</small></th>
+                                <th id="th-peak-density" data-sort="peak_sample_density">Peak<br><small>/100m&sup2;</small></th>
+                                <th data-sort="avg_fish_per_sample">Avg Fish<br><small>/Sample</small></th>
+                                <th data-sort="num_samples">Samples</th>
+                                <th data-sort="years_sampled">Years</th>
+                                <th data-sort="first_year">First</th>
+                                <th data-sort="last_year">Last</th>
+                                <th data-sort="data_source">Source</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section class="stream-detail" id="streamDetail" style="display:none;">
+            <div class="detail-header">
+                <h2 id="detailName"></h2>
+                <button id="closeDetail" class="btn-close">&times;</button>
+            </div>
+            <div class="detail-body">
+                <div class="detail-stats" id="detailStats"></div>
+                <div class="detail-sites" id="detailSites"></div>
+                <div class="detail-notes" id="detailNotes"></div>
+            </div>
+        </section>
+
+        <section class="sources-section">
+            <h2>Data Sources</h2>
+            <div class="sources-grid" id="sourcesGrid"></div>
+        </section>
+    </main>
+
+    <footer>
+        <p>Data compiled from USGS, NPS IRMA, TWRA, NCWRC, NC DEQ, EBTJV, USFS, and academic research.
+        Electrofishing survey data spans 1958-2025 from 8+ agencies across 260+ streams.</p>
+        <p class="footer-note">Density = total brook trout observed / stream area sampled (per 100m&sup2;).
+        Higher values indicate more abundant populations. Streams without density data have fish counts from other survey methods.</p>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="data/master_trout_density.js"></script>
+    <script src="data/site_data.js"></script>
+    <script src="data/sa_samples_data.js"></script>
+    <script src="sa_app.js"></script>
+</body>
+</html>

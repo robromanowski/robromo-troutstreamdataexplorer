@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trout Stream Data Explorer</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        .portal-body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg);
+        }
+
+        .portal-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .portal-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: -0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .portal-header p {
+            color: var(--text-dim);
+            font-size: 0.95rem;
+        }
+
+        .region-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            max-width: 960px;
+            width: 100%;
+            padding: 0 2rem;
+        }
+
+        .region-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            text-decoration: none;
+            color: var(--text);
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .region-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            transition: opacity 0.2s;
+            opacity: 0.6;
+        }
+
+        .region-card.sa::before {
+            background: linear-gradient(90deg, #4fc3f7, #66bb6a);
+        }
+
+        .region-card.ne::before {
+            background: linear-gradient(90deg, #ce93d8, #4fc3f7);
+        }
+
+        .region-card.ny::before {
+            background: linear-gradient(90deg, #ffcc80, #ef9a9a);
+        }
+
+        .region-card.va::before {
+            background: linear-gradient(90deg, #a5d6a7, #80cbc4);
+        }
+
+        .region-card.west::before {
+            background: linear-gradient(90deg, #ffb74d, #ff8a65);
+        }
+
+        .region-card.idaho::before {
+            background: linear-gradient(90deg, #80deea, #4dd0e1);
+        }
+
+        .region-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+
+        .region-card:hover::before {
+            opacity: 1;
+        }
+
+        .region-card .region-icon {
+            font-size: 2rem;
+        }
+
+        .region-card h2 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .region-card .region-sub {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            line-height: 1.5;
+        }
+
+        .region-card .region-stats {
+            display: flex;
+            gap: 1.25rem;
+            margin-top: 0.5rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .region-stat {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .region-stat .val {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .region-stat .lbl {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .region-card .arrow {
+            position: absolute;
+            right: 1.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--border);
+            font-size: 1.5rem;
+            transition: all 0.2s;
+        }
+
+        .region-card:hover .arrow {
+            color: var(--accent);
+            right: 1.25rem;
+        }
+
+        .region-card.coming-soon {
+            opacity: 0.6;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .coming-soon-badge {
+            display: inline-block;
+            font-size: 0.6rem;
+            background: rgba(255, 167, 38, 0.15);
+            color: var(--orange);
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            vertical-align: middle;
+            margin-left: 0.5rem;
+        }
+
+        .portal-footer {
+            margin-top: 3rem;
+            color: var(--text-dim);
+            font-size: 0.75rem;
+            text-align: center;
+        }
+
+        @media (max-width: 600px) {
+            .region-grid { grid-template-columns: 1fr; }
+            .portal-header h1 { font-size: 1.4rem; }
+        }
+    </style>
+</head>
+<body class="portal-body">
+    <div class="portal-header">
+        <h1>Trout Stream Data Explorer</h1>
+        <p>Electrofishing survey data — select a region to explore</p>
+    </div>
+
+    <div class="region-grid">
+        <a href="southern_appalachian.html" class="region-card sa">
+            <div class="region-icon">⛰️</div>
+            <h2>Southern Appalachian</h2>
+            <p class="region-sub">Great Smoky Mountains, Cherokee NF, Pisgah NF, Nantahala NF &amp; Eastern TN / Western NC</p>
+            <div class="region-stats">
+                <div class="region-stat">
+                    <span class="val" id="sa-streams">263</span>
+                    <span class="lbl">Streams</span>
+                </div>
+                <div class="region-stat">
+                    <span class="val">1958–2024</span>
+                    <span class="lbl">Date Range</span>
+                </div>
+                <div class="region-stat">
+                    <span class="val">8+</span>
+                    <span class="lbl">Sources</span>
+                </div>
+            </div>
+            <span class="arrow">›</span>
+        </a>
+
+        <a href="new_england.html" class="region-card ne">
+            <div class="region-icon">🌲</div>
+            <h2>New England</h2>
+            <p class="region-sub">New Hampshire, Connecticut, Massachusetts &amp; Vermont</p>
+            <div class="region-stats">
+                <div class="region-stat">
+                    <span class="val">2,719</span>
+                    <span class="lbl">Streams</span>
+                </div>
+                <div class="region-stat">
+                    <span class="val">1983–2025</span>
+                    <span class="lbl">Date Range</span>
+                </div>
+                <div class="region-stat">
+                    <span class="val">4</span>
+                    <span class="lbl">Sources</span>
+                </div>
+            </div>
+            <span class="arrow">›</span>
+        </a>
+
+        <a href="new_york.html" class="region-card ny">
+            <div class="region-icon">🏔️</div>
+            <h2>New York</h2>
+            <p class="region-sub">Adirondacks &amp; Catskills — USGS multi-pass electrofishing surveys</p>
+            <div class="region-stats">
+                <div class="region-stat">
+                    <span class="val">76</span>
+                    <span class="lbl">Streams</span>
+                </div>
+                <div class="region-stat">
+                    <span class="val">1988–2024</span>
+                    <span class="lbl">Date Range</span>
+                </div>
+                <div class="region-stat">
+                    <span class="val">1</span>
+                    <span class="lbl">Source</span>
+                </div>
+            </div>
+            <span class="arrow">›</span>
+        </a>
+
+        <a href="virginia_wv.html" class="region-card va">
+            <div class="region-icon">🌿</div>
+            <h2>Virginia &amp; West Virginia</h2>
+            <p class="region-sub">Shenandoah NP, Blue Ridge, Appalachian highlands — brook trout</p>
+            <div class="region-stats">
+                <div class="region-stat">
+                    <span class="val">332</span>
+                    <span class="lbl">Streams</span>
+                </div>
+                <div class="region-stat">
+                    <span class="val">1982–2021</span>
+                    <span class="lbl">Date Range</span>
+                </div>
+                <div class="region-stat">
+                    <span class="val">3+</span>
+                    <span class="lbl">Sources</span>
+                </div>
+            </div>
+            <span class="arrow">›</span>
+        </a>
+        <a href="western_us.html" class="region-card west">
+            <div class="region-icon">🏔️</div>
+            <h2>Western US</h2>
+            <p class="region-sub">Colorado, Idaho, Utah, Washington &amp; Wyoming — cutthroat, rainbow, brown &amp; bull trout</p>
+            <div class="region-stats">
+                <div class="region-stat">
+                    <span class="val">90</span>
+                    <span class="lbl">Streams</span>
+                </div>
+                <div class="region-stat">
+                    <span class="val">2018–2019</span>
+                    <span class="lbl">Date Range</span>
+                </div>
+                <div class="region-stat">
+                    <span class="val">1</span>
+                    <span class="lbl">Source</span>
+                </div>
+            </div>
+            <span class="arrow">›</span>
+        </a>
+
+        <a href="idaho.html" class="region-card idaho">
+            <div class="region-icon">🎣</div>
+            <h2>Idaho</h2>
+            <p class="region-sub">IDFG Standard Stream Survey — cutthroat, rainbow, brook, brown &amp; bull trout — counts only, no density</p>
+            <div class="region-stats">
+                <div class="region-stat">
+                    <span class="val">1,384</span>
+                    <span class="lbl">Streams</span>
+                </div>
+                <div class="region-stat">
+                    <span class="val">1969–2025</span>
+                    <span class="lbl">Date Range</span>
+                </div>
+                <div class="region-stat">
+                    <span class="val">1.2M</span>
+                    <span class="lbl">Fish Records</span>
+                </div>
+            </div>
+            <span class="arrow">›</span>
+        </a>
+    </div>
+
+    <p class="portal-footer">Data compiled from state fish &amp; wildlife agencies, USGS, NPS, USFS, and academic research.<br>Electrofishing survey data covering brook trout, brown trout, rainbow trout, cutthroat trout, and bull trout populations.</p>
+</body>
+</html>

@@ -1,0 +1,30 @@
+# Build/dev artifacts
+bash.exe.stackdump
+*.stackdump
+
+# Dev-only pages (not linked from portal)
+combined.html
+combined_app.js
+monongahela_wv.html
+wv_mono_app.js
+wv_mono_counts.js
+
+# Scripts and raw data (server-side build tools)
+scripts/
+data/raw/
+old-data-rob/
+streamlit/
+manual_wv_data/
+docs/
+
+# Intermediate/build data files
+data/ne_master.json
+data/master_trout_density.csv
+data/master_trout_density.json
+data/vt-a.json
+data/vt-b.json
+app.js
+
+# Other
+.claude/
+.vscode/

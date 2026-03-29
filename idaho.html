@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Idaho Trout Stream Data Explorer</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        /* Idaho table: wider stream names, narrow drainage */
+        #dataTable td:nth-child(2),
+        #dataTable th:nth-child(2) { min-width: 180px; max-width: 220px; }
+        #dataTable td:nth-child(12),
+        #dataTable th:nth-child(12) { max-width: 80px; overflow: hidden; text-overflow: ellipsis; font-size: 0.72rem; color: var(--text-dim); }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <a href="index.html" class="back-link">← All Regions</a>
+            <h1><span class="header-region">Idaho</span><span class="header-tagline">Trout Stream Data Explorer</span></h1>
+            <p class="subtitle">IDFG Standard Stream Survey — electrofishing &amp; snorkeling across 1,384 streams — cutthroat, rainbow, brook, brown &amp; bull trout — 1969–2025</p>
+        </div>
+    </header>
+
+    <main>
+        <section class="stats-bar">
+            <div class="stat">
+                <span class="stat-value" id="totalStreams">--</span>
+                <span class="stat-label">Streams</span>
+            </div>
+            <div class="stat">
+                <span class="stat-value" id="totalSamples">--</span>
+                <span class="stat-label">Total Visits</span>
+            </div>
+            <div class="stat">
+                <span class="stat-value" id="dateRange">--</span>
+                <span class="stat-label">Date Range</span>
+            </div>
+            <div class="stat">
+                <span class="stat-value" id="dataSources">--</span>
+                <span class="stat-label">Data Sources</span>
+            </div>
+        </section>
+
+        <div class="notice-banner" style="background:rgba(255,167,38,0.1);border:1px solid rgba(255,167,38,0.3);border-radius:8px;padding:0.75rem 1.25rem;margin:0 0 1rem;color:var(--text-dim);font-size:0.85rem;">
+            <strong style="color:var(--orange);">No density metric available.</strong>
+            The IDFG SSS export includes individual fish records but not reach area measurements, so fish-per-area density cannot be calculated.
+            The table is sorted by average fish caught per survey visit — a relative index of trout abundance.
+        </div>
+
+        <section class="controls">
+            <div class="filter-group">
+                <label>🐟 Species</label>
+                <div class="multi-select-wrap" id="speciesFilterWrap">
+                    <button class="multi-select-btn" id="speciesFilterBtn" type="button">All Species ▾</button>
+                    <div class="multi-select-panel" id="speciesFilterPanel"></div>
+                </div>
+            </div>
+            <div class="filter-group">
+                <label for="drainageFilter">🌊 Drainage</label>
+                <select id="drainageFilter">
+                    <option value="all">All Drainages</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="minSamples">#️⃣ Min Visits</label>
+                <input type="number" id="minSamples" value="1" min="1" max="200">
+            </div>
+            <div class="filter-group">
+                <label for="searchInput">🔍 Search Stream</label>
+                <input type="text" id="searchInput" placeholder="Stream name...">
+            </div>
+            <div class="filter-group">
+                <label for="minSizeSlider">📏 Min Avg Size</label>
+                <input type="range" id="minSizeSlider" min="0" max="18" step="0.5" value="0">
+                <span class="slider-value" id="minSizeVal">Any</span>
+            </div>
+            <div class="filter-group">
+                <label for="minPct8Slider">🎯 Min ≥ 8"</label>
+                <input type="range" id="minPct8Slider" min="0" max="100" step="5" value="0">
+                <span class="slider-value" id="minPct8Val">Any</span>
+            </div>
+            <div class="filter-group">
+                <label for="slopeFilter">⛰️ Gradient</label>
+                <select id="slopeFilter">
+                    <option value="all">All Gradients</option>
+                    <option value="flat">Flat &lt; 2%</option>
+                    <option value="moderate">Moderate 2–5%</option>
+                    <option value="high">High 5–10%</option>
+                    <option value="steep">Steep &gt; 10%</option>
+                    <option value="any_data">Has Gradient Data</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>🏞️ Water Type</label>
+                <label class="checkbox-filter" for="excludeRivers">
+                    <input type="checkbox" id="excludeRivers">
+                    Small water only
+                </label>
+            </div>
+            <div class="filter-group">
+                <button id="resetFilters" class="btn-reset">Reset Filters</button>
+            </div>
+        </section>
+
+        <section class="content-grid">
+            <div class="map-container">
+                <div id="map"></div>
+            </div>
+            <div class="table-container">
+                <div class="table-header">
+                    <h2>Stream Rankings <span id="filteredCount"></span></h2>
+                    <button id="exportCsv" class="btn-export">Export CSV</button>
+                </div>
+                <div class="table-wrapper">
+                    <table id="dataTable">
+                        <thead>
+                            <tr>
+                                <th data-sort="rank">#</th>
+                                <th data-sort="stream_name">Stream Name</th>
+                                <th title="Mapped on map">📍</th>
+                                <th data-sort="species">Species</th>
+                                <th data-sort="slope_pct" title="Stream gradient % (from NHDPlus)">Slope<br><small>%</small></th>
+                                <th data-sort="avg_fish_per_visit" class="sortable active desc">Avg Fish<br><small>/Visit</small></th>
+                                <th data-sort="avg_length_in" title="Average fish length — all time">Avg Size<br><small>(all time)</small></th>
+                                <th data-sort="avg_length_in_5yr" title="Average fish length — last 5 survey years only">Avg Size<br><small>(5yr)</small></th>
+                                <th data-sort="pct_over_8in" title="% of measured fish ≥ 8 inches">≥ 8"<br><small>%</small></th>
+                                <th data-sort="peak_fish_per_visit">Peak Fish<br><small>/Visit</small></th>
+                                <th data-sort="total_fish_observed">Total<br><small>Fish</small></th>
+                                <th data-sort="num_samples">Visits</th>
+                                <th data-sort="years_sampled">Years</th>
+                                <th data-sort="first_year">First</th>
+                                <th data-sort="last_year">Last</th>
+                                <th data-sort="drainage">Drainage</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section class="stream-detail" id="streamDetail" style="display:none;">
+            <div class="detail-header">
+                <h2 id="detailName"></h2>
+                <button id="closeDetail" class="btn-close">&times;</button>
+            </div>
+            <div class="detail-body">
+                <div class="detail-stats" id="detailStats"></div>
+                <div class="detail-sites" id="detailSites"></div>
+                <div class="detail-notes" id="detailNotes"></div>
+            </div>
+        </section>
+
+        <section class="sources-section">
+            <h2>Data Sources</h2>
+            <div class="sources-grid" id="sourcesGrid"></div>
+        </section>
+    </main>
+
+    <footer>
+        <p>Data from the Idaho Department of Fish and Game Standard Stream Survey (IDFG SSS).
+        Over 1.2 million individual fish records from electrofishing and snorkeling surveys across Idaho, 1969–2025.</p>
+        <p class="footer-note">Reach dimensions (length &times; width) were not included in this export, so fish-per-area density cannot be calculated.
+        Avg fish per visit is a relative abundance index only.</p>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="data/idaho_trout_counts.js"></script>
+    <script src="data/idaho_samples_data.js"></script>
+    <script src="idaho_app.js"></script>
+</body>
+</html>
